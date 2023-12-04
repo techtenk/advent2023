@@ -1,8 +1,5 @@
-use core::num;
-
-use crate::{get_file_path, helpers::{self, get_input_lines}};
+use crate::{get_file_path, helpers::get_input_lines};
 use regex::Regex;
-use regex::CaptureMatches;
 
 pub fn run_part1() {
     let mut buf = Vec::new();
