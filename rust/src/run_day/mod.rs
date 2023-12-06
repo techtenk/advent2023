@@ -25,6 +25,14 @@ pub fn run(day: i32, parts: u8) {
                 day2::run_part2();
             }
         },
+        3 => {
+            if run_part1 {
+                day3::run_part1();
+            }
+            if run_part2 {
+                day3::run_part2();
+            }
+        }
         _ => {
             println!("Day {} not implemented", day);
         }
