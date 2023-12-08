@@ -3,6 +3,7 @@
 pub const DAY_ALL_PARTS: u8 = 3;
 use crate::day1;
 use crate::day2;
+use crate::day3;
 
 pub fn run(day: i32, parts: u8) {
     let run_part1 = parts & 1 > 0;
@@ -30,7 +31,7 @@ pub fn run(day: i32, parts: u8) {
                 day3::run_part1();
             }
             if run_part2 {
-                day3::run_part2();
+                // day3::run_part2();
             }
         }
         _ => {
