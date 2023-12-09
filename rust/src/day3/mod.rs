@@ -1,6 +1,5 @@
-use core::num;
-use std::{collections::HashSet, hash::Hasher};
-use std::hash::Hash;
+
+use std::collections::HashSet;
 
 use crate::{helpers::get_input_lines, get_file_path};
 #[derive(Clone, Copy)]

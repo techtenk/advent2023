@@ -1,4 +1,3 @@
-use std::ops::Deref;
 
 use crate::{helpers::get_input_lines, get_file_path};
 
@@ -28,7 +27,7 @@ pub fn run_part1() {
 }
 
 fn parse_line(line: String) -> Vec<i32> {
-    let vec = line.split(" ").filter(|item| *item != "" && *item != "Time:" && *item != "Distance:").collect::<Vec<&str>>();;
+    let vec = line.split(" ").filter(|item| *item != "" && *item != "Time:" && *item != "Distance:").collect::<Vec<&str>>();
     return vec.into_iter().map(|item| item.parse::<i32>().unwrap()).collect();
 }
 
