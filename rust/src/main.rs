@@ -4,7 +4,9 @@ mod run_day;
 mod helpers;
 mod day1;
 mod day2;
+mod day3;
 mod day6;
+
 
 fn help() {
     println!("usage:
