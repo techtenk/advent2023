@@ -8,21 +8,7 @@ struct SchemaNumber {
     positions: [(usize, usize); 3],
     number: i32
 }
-
-impl PartialEq for SchemaNumber {
-    fn eq(&self, other: &Self) -> bool {
-        self.number == other.number
-    }
-}
-
-impl Eq for SchemaNumber {}
-
-impl Hash for SchemaNumber {
-    fn hash<H: Hasher>(&self, state: & mut H) {
-        self.number.hash(state);
-    }
-}
-
+#[derive(Clone, Copy)]
 struct SchemaSymbol {
     line: usize,
     column: usize,
@@ -36,17 +22,13 @@ pub fn run_part1() {
     // now iterate over the numbers and check which are part numbers, add them up
     let mut total = 0;
     // println!("Parts:");
-    let mut parts_set: HashSet<SchemaNumber> = HashSet::new();
-    for n in numbers.iter() {
+    for n in numbers {
         if is_part_number(&n, &symbols) {
-            parts_set.insert(*n);
+            total += n.number;
             // print!("{}, ", n.number);
         } else {
             // print!("{}, ", n.number);
         }
-    }
-    for p in parts_set {
-        total += p.number;
     }
     // println!("");
     println!("Total: {}", total);
@@ -102,23 +84,67 @@ fn read_schematic(lines: std::io::Lines<std::io::BufReader<&[u8]>>) -> (Vec<Sche
                         // found a symbol
                         symbols_found.push(SchemaSymbol { line: line_no, column: col_no, symbol: c });
                     }
-                    if let Ok(n) = running_number.parse::<i32>() {
-                        let mut positions = [(0 as usize, 0 as usize); 3];
-                        for i in 0..running_number.len() {
-                            if i == 3 {
-                                println!("should not happen");
-                            }
-                            positions[i] = positions_list.get(i).unwrap().to_owned();
-                        }
-                        numbers_found.push(SchemaNumber { number: n, positions: positions });
-                    }
+                    check_for_number(&running_number, &positions_list, &mut numbers_found);
                     
                     running_number = "".to_string();
                     positions_list.clear();
                 }
             }
         }
+        check_for_number(&running_number, &positions_list, &mut numbers_found)
     }
 
     (numbers_found, symbols_found)
+}
+
+fn check_for_number(running_number: &String, positions_list: &Vec<(usize, usize)>, numbers_found: &mut Vec<SchemaNumber>) {
+    if let Ok(n) = running_number.parse::<i32>() {
+        let mut positions = [(0 as usize, 0 as usize); 3];
+        for i in 0..running_number.len() {
+            if i == 3 {
+                println!("should not happen");
+            }
+            positions[i] = positions_list.get(i).unwrap().to_owned();
+        }
+        numbers_found.push(SchemaNumber { number: n, positions: positions });
+    }
+}
+
+struct Gear {
+    parts: [SchemaNumber; 2]
+}
+
+impl Gear {
+    pub fn get_ratio(&self) -> i64 {
+        self.parts[0].number as i64 * self.parts[1].number as i64 
+    }
+}
+
+pub fn run_part2() {
+    let mut buf = Vec::new();
+    let lines = get_input_lines(&get_file_path!("input.txt"), & mut buf);
+
+    let (numbers, symbols) = read_schematic(lines);
+
+    let mut gears: Vec<Gear> = Vec::new();
+    // find the gears by walking through the * symbols and checking for overlapping part numbers.
+    // 2 numbers makes it a gear, add to vector
+    for g in symbols.iter().filter(|item| item.symbol == '*') {
+        let mut parts: Vec<SchemaNumber> = Vec::new();
+        for part in numbers.iter() {
+            if is_part_number(&part, &vec![*g]) {
+                parts.push(*part);
+            }
+        }
+        let mut parts_iter = parts.iter();
+        if let Some(part1) = parts_iter.next() {
+            if let Some(part2) = parts_iter.next() {
+                gears.push(Gear { parts: [*part1, *part2] });
+            }
+        }
+    }
+    // now sum the gear ratios
+    let gears_total = gears.iter().fold(0, |acc, item| {acc + item.get_ratio()});
+    println!("Total Gear Ratio: {}", gears_total);
+
 }
