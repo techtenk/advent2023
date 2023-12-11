@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 regex = "1.10.2"
-scan-rules = "0.2.0"
+scan-rules = { version = "0.2.0", features = ["nightly-pattern"] }

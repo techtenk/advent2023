@@ -5,6 +5,7 @@ use crate::day1;
 use crate::day2;
 use crate::day3;
 use crate::day4;
+use crate::day5;
 use crate::day6;
 
 pub fn run(day: i32, parts: u8) {
@@ -44,6 +45,14 @@ pub fn run(day: i32, parts: u8) {
                 day4::run_part2();
             }
         },
+        5 => {
+            if run_part1 {
+                day5::run_part1();
+            }
+            if run_part2 {
+                day5::run_part2();
+            }
+        }
         6 => {
             if run_part1 {
                 day6::run_part1();
