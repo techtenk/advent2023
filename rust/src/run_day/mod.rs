@@ -7,6 +7,7 @@ use crate::day3;
 use crate::day4;
 use crate::day5;
 use crate::day6;
+use crate::day7;
 
 pub fn run(day: i32, parts: u8) {
     let run_part1 = parts & 1 > 0;
@@ -52,13 +53,21 @@ pub fn run(day: i32, parts: u8) {
             if run_part2 {
                 day5::run_part2();
             }
-        }
+        },
         6 => {
             if run_part1 {
                 day6::run_part1();
             }
             if run_part2 {
                 day6::run_part2();
+            }
+        },
+        7 => {
+            if run_part1 {
+                day7::run_part1();
+            }
+            if run_part2 {
+                day7::run_part2();
             }
         },
         _ => {
