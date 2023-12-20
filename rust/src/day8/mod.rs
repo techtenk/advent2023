@@ -8,7 +8,6 @@ use crate::{helpers::get_input_lines, get_file_path};
 
 
 pub fn run_part1() {
-    return;
     let (instructions, nodes) = parse_input();
     let mut current = Some(nodes.iter().find(|item| item.name == ['A'; 3]).unwrap());
     let mut found = false;
@@ -33,60 +32,57 @@ pub fn run_part1() {
 pub fn run_part2() {
     let (instructions, nodes) = parse_input();
     // threads because they are fun!
-    let mut found = false;
-    let mut start_nodes: Vec<&Node> = nodes.iter().filter(|item| item.name[2] == 'A').collect();
-    let mut resets = 0;
-    while !found {
-        (found, start_nodes) = thread::scope(|s| {
-            let mut handles = Vec::new();
-            for n in start_nodes.iter() {
-                let i_list_len = instructions.iter().len();
-                let mut i_list = instructions.iter().cycle(); // nice
-                let n_list = &nodes;
-                let handle = s.spawn(move || {
-                    // each thread will generate a list of 'steps' where the node ends in 'Z'. We arbitrarily check 10k at a time
-                    let mut valid_ends = Vec::new();
-                    let mut current = *n;
-                    for step in 1..1000*i_list_len {
-                        let i = i_list.next().unwrap();
-                        match i {
-                            'L' => { current = n_list.iter().find(|item| item.name == current.left).unwrap() },
-                            'R' => { current = n_list.iter().find(|item| item.name == current.right).unwrap() },
-                            _ => panic!("Invalid instruction!")
-                        }
-                        if current.name[2] == 'Z' { valid_ends.push(step) };
+    let start_nodes: Vec<&Node> = nodes.iter().filter(|item| item.name[2] == 'A').collect();
+    let intervals = thread::scope(|s| {
+        let mut handles = Vec::new();
+        for n in start_nodes.iter() {
+            let i_list_len = instructions.iter().len();
+            let mut i_list = instructions.iter().cycle(); // nice
+            let n_list = &nodes;
+            let handle = s.spawn(move || {
+                // each thread will generate a list of 'steps' where the node ends in 'Z'. We arbitrarily check 10k at a time
+                let mut valid_ends = Vec::new();
+                let mut current = *n;
+                for step in 1..1000*i_list_len {
+                    let i = i_list.next().unwrap();
+                    match i {
+                        'L' => { current = n_list.iter().find(|item| item.name == current.left).unwrap() },
+                        'R' => { current = n_list.iter().find(|item| item.name == current.right).unwrap() },
+                        _ => panic!("Invalid instruction!")
                     }
-                    (current, valid_ends)
-                });
-                handles.push(handle);
-            }
-            // wait for all the threads to return, compile the list of the next start nodes
-            let mut new_start = Vec::new();
-            let mut valid_ends_list = Vec::new();
-            for h in handles {
-                let (next_start, ends) = h.join().unwrap();
-                new_start.push(next_start);
-                valid_ends_list.push(ends);
-            }
-
-            for ends in valid_ends_list.iter() {
-                let mut ei = ends.iter();
-                println!(" first three: [{:?}, {:?}, {:?}, {:?}", ei.next(), ei.next(), ei.next(), ei.next());
-            }
-            
-            // check if we found any steps that all ended on 'Z'
-            if let Some(step) = valid_ends_list.into_iter().reduce(|acc, next| acc.into_iter().filter(|item| next.contains(item)).collect()) {
-                if let Some(first) = step.first() {
-                    println!("All nodes end with 'Z' on step {}", first);
-                    found = true;
+                    if current.name[2] == 'Z' { valid_ends.push(step) };
                 }
-            }
-            (found, new_start)
-        });
-        resets += 1;
-    }
-    let i_list_count = instructions.iter().len();
-    println!("Reset count: {} instruction count: {}", resets, i_list_count);
+                valid_ends
+            });
+            handles.push(handle);
+        }
+        // wait for all the threads to return, compile the list of the next start nodes
+        let mut intervals = Vec::new();
+        let mut valid_ends_list = Vec::new();
+        for h in handles {
+            let ends = h.join().unwrap();
+            valid_ends_list.push(ends);
+        }
+
+        // for ends in valid_ends_list.iter() {
+        //     let mut ei = ends.iter();
+        //     println!(" first three: [{:?}, {:?}, {:?}, {:?}", ei.next(), ei.next(), ei.next(), ei.next());
+        // }
+        
+        // collect the intervals on each starting node
+        // silly input is just REALLY simple cycle where there is only on 'Z'-ending node per loop
+        // so all we have to do is take the 2nd point we found and subtract the first
+
+        for list in valid_ends_list {
+            let interval = list.get(1).unwrap() - list.get(0).unwrap();
+            intervals.push(interval);
+        }
+        intervals
+    });
+    // intervals is now calculated from each start node
+    println!("List of intervals {:?}", intervals);
+    println!("At this point I just plugged the intervals into a LCM calculator and moved on");
+
 }
 
 struct Node {
