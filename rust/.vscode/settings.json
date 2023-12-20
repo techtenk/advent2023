@@ -1,8 +1,7 @@
 {
     "cmake.configureOnOpen": true,
     "rust-analyzer.linkedProjects": [
-        ".\\Cargo.toml",
-        ".\\Cargo.toml",
         ".\\Cargo.toml"
-    ]
+    ],
+    "rust-analyzer.showUnlinkedFileNotification": false
 }
