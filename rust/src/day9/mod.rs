@@ -51,10 +51,13 @@ impl ValueHistory {
             }
             last = Some(num);
         }
-        if !reverse {
-            return *list.iter().rev().next().unwrap() + Self::recurse_get_prediction(&diff_list, reverse);
-        }
-        list.iter().next().unwrap() - Self::recurse_get_prediction(&diff_list, reverse)
+
+        let (first_num, add_or_sub): (i32, fn(i32, i32) -> <i32 as Add<i32>>::Output) = match reverse {
+            true => (*list.iter().next().unwrap(), i32::sub),
+            false => (*list.iter().last().unwrap(), i32::add)
+        };
+
+        add_or_sub(first_num, Self::recurse_get_prediction(&diff_list, reverse))
     }
 }
 
