@@ -134,12 +134,69 @@ fn find_connections(grid: &HashMap<(usize, usize), char>, node: &(usize, usize),
     connections
 }
 
+#[derive(PartialEq)]
+enum InOutLoopState {
+    IN,
+    OUT
+}
+
+struct ScanState {
+    line: usize,
+    state: InOutLoopState
+}
+
 pub fn run_part2() {
     if let Ok(nodes) = get_loop_nodes().try_lock().as_deref_mut() {
         // let's start by sorting the node list by the second element in each tuple
-        // nodes.sort_by(|a, b| (*a.1, *a.0))
+        nodes.sort_by(|a, b| (a.1, a.0).cmp(&(b.1, b.0)));
 
         // now for each line
+        // iterate over the nodes in that line, keeping a state for inside/outside the loop
+        // count +1 for each node that you pass over that isn't a loop node while in the "inside" state
+        // state starts as "IN" because the first node on each line will open the loop and then it'll count to the next
+        let mut state = ScanState { line: 0, state: InOutLoopState::IN };
+        let mut node_iter = nodes.iter().peekable();
+        let inner_blocks = {
+            let mut count = 0;
+            while let Some(node) = node_iter.next() {
+                let next = node_iter.peek();
+                println!("current: {:?} next: {:?}", node, next);
+                // check if we are still on the same line, otherwise reset the state for the next line and continue
+                if next.is_some() && next.unwrap().1 != state.line {
+                    state.state = InOutLoopState::IN;
+                    state.line = next.unwrap().1;
+                    // now check if the next node is on the same line, if not, then continue 
+                    println!("last node of line");
+                    continue;
+                }
+                
+                if next.is_some() && next.unwrap().0 - node.0 == 1 {
+                    println!("next node is adjacent");
+                    state.line = node.1;
+                    // if it's not a dash, change the IN/OUT state
+                    
+                    continue;
+                }
+                
+                println!("processing next node");
+                
+                // now the interesting part, if we are IN, then count the number of nodes between this and the next
+                if state.state == InOutLoopState::IN {
+                    let new_count = match next {
+                        Some(n) => n.0 - node.0 - 1, // minus one because it's strictly exclusive of both endpoints
+                        None => 0 // no more nodes on this line to enclose
+                    };
+                    println!("Adding {} tiles", new_count);
+                    count += new_count;
+                }
+
+                // now update the state, just toggle it
+                state.state = if state.state == InOutLoopState::IN { InOutLoopState::OUT } else { InOutLoopState::IN };
+                state.line = node.1;
+            }
+            count
+        };
+        println!("Found {} tiles enclosed", inner_blocks);
     }
 
 }
