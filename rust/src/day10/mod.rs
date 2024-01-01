@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Mutex, ops::DerefMut};
+use std::{collections::{HashMap, VecDeque}, sync::Mutex, ops::DerefMut};
 
 use crate::{helpers::get_input_lines, get_file_path};
 
@@ -142,7 +142,8 @@ enum InOutLoopState {
 
 struct ScanState {
     line: usize,
-    state: InOutLoopState
+    state: InOutLoopState,
+    unmatched: Vec<char>
 }
 
 pub fn run_part2() {
@@ -154,45 +155,83 @@ pub fn run_part2() {
         // iterate over the nodes in that line, keeping a state for inside/outside the loop
         // count +1 for each node that you pass over that isn't a loop node while in the "inside" state
         // state starts as "IN" because the first node on each line will open the loop and then it'll count to the next
-        let mut state = ScanState { line: 0, state: InOutLoopState::IN };
+        let grid = parse_input();
+        
+        // find the edges
+        // | F L 7 J toggle the state
+        // "-" does nothing
+        let mut state = ScanState { line: 0, state: InOutLoopState::OUT, unmatched: Vec::new() };
         let mut node_iter = nodes.iter().peekable();
         let inner_blocks = {
             let mut count = 0;
             while let Some(node) = node_iter.next() {
                 let next = node_iter.peek();
                 println!("current: {:?} next: {:?}", node, next);
-                // check if we are still on the same line, otherwise reset the state for the next line and continue
-                if next.is_some() && next.unwrap().1 != state.line {
-                    state.state = InOutLoopState::IN;
-                    state.line = next.unwrap().1;
-                    // now check if the next node is on the same line, if not, then continue 
-                    println!("last node of line");
-                    continue;
-                }
-                
-                if next.is_some() && next.unwrap().0 - node.0 == 1 {
-                    println!("next node is adjacent");
-                    state.line = node.1;
-                    // if it's not a dash, change the IN/OUT state
-                    
-                    continue;
-                }
                 
                 println!("processing next node");
-                
-                // now the interesting part, if we are IN, then count the number of nodes between this and the next
+
+                // now update the state, based on what character it was
+                // | toggles 
+                // J and 7 
+                // F and L 
+                // - doesn't do anything
+                // . shouldn't exist on the path
+                // S, in our input is a J
+                let mut lrl = state.unmatched.pop();
+                match (lrl, grid.get(node)) {
+                    (_, Some('|')) => state.state = if state.state == InOutLoopState::IN { InOutLoopState::OUT } else { InOutLoopState::IN },
+                    (Some('F'), Some('J'|'S')) => state.state = if state.state == InOutLoopState::IN { InOutLoopState::OUT } else { InOutLoopState::IN },//toggle
+                    (Some('F'), Some('7')) => {}, // do nothing
+                    (Some('F'), Some('L')) => panic!("I can't see how you get 'L' after 'F'"),
+                    (Some('F'), Some('F')) => panic!("I can't see how you get 'F' after 'F'"),
+                    (Some('J'), Some('J')) => panic!("I can't see how you get 'J' after 'J'"),
+                    (Some('J'), Some('7')) => panic!("I can't see how you get '7' after 'J'"),
+                    (Some('J'), Some('L')) => state.state = if state.state == InOutLoopState::IN { InOutLoopState::OUT } else { InOutLoopState::IN }, //toggle
+                    (Some('J'), Some('F')) => {
+                        // stack on top
+                        state.unmatched.push('J');
+                        state.unmatched.push('F')
+                    }
+                    (Some('7'), Some('J')) => panic!("I can't see how you get 'J' after '7'"),
+                    (Some('7'), Some('7')) => panic!("I can't see how you get '7' after '7'"),
+                    (Some('7'), Some('L')) => {
+                        state.unmatched.push('7');
+                        state.unmatched.push('L');
+                    },
+                    (Some('7'), Some('F')) => {}, // do nothing
+                    (Some('L'), Some('J')) => {}, // do nothing
+                    (Some('L'), Some('7')) => state.state = if state.state == InOutLoopState::IN { InOutLoopState::OUT } else { InOutLoopState::IN }, // toggle
+                    (Some('L'), Some('L')) => panic!("I can't see how you get 'L' after 'L'"),
+                    (Some('L'), Some('F')) => panic!("I can't see how you get 'F' after 'L'"),
+                    (None, Some('J')) => panic!("I can't see how you open a line with 'J'"),
+                    (None, Some('7')) => panic!("I can't see how you open a line with '7'"), //panic
+                    (None, Some('L')) => { state.unmatched.push('L'); }, // do nothing
+                    (None, Some('F')) => { state.unmatched.push('F'); }, // do nothing
+                    (Some(x), Some('-')) => { state.unmatched.push(x); }, // no match, just put same character back
+                    (_,Some(x)) => panic!("Unrecognized character {}!", x),
+                    (_,None) => panic!("Node in loop that's not in the grid! Node: {:?}", node)
+                }
+
+                // now the interesting part, if we are IN
+                // count the number of nodes between this and the next
                 if state.state == InOutLoopState::IN {
                     let new_count = match next {
                         Some(n) => n.0 - node.0 - 1, // minus one because it's strictly exclusive of both endpoints
-                        None => 0 // no more nodes on this line to enclose
+                        None => 0//panic!("Not expected to end while state is open") // no more nodes on this line to enclose
                     };
                     println!("Adding {} tiles", new_count);
                     count += new_count;
                 }
 
-                // now update the state, just toggle it
-                state.state = if state.state == InOutLoopState::IN { InOutLoopState::OUT } else { InOutLoopState::IN };
-                state.line = node.1;
+                // check if we are still on the same line, otherwise reset the state for the next line and continue
+                if next.is_some() && next.unwrap().1 != state.line {
+                    if state.state != InOutLoopState::OUT { panic!("Not sure how you can end a line in the \"IN\" state")};
+                    state.state = InOutLoopState::OUT;
+                    state.line = next.unwrap().1;
+                    state.unmatched.clear();
+                    println!("last node of line");
+                }
+
             }
             count
         };
