@@ -1,12 +1,12 @@
-use std::{collections::{HashMap, VecDeque}, sync::Mutex, ops::DerefMut};
+use std::{collections::HashMap, sync::Mutex};
 
 use crate::{helpers::get_input_lines, get_file_path};
 
-static mut loop_nodes: Vec<(usize, usize)> = Vec::new();
+static mut LOOP_NODES: Vec<(usize, usize)> = Vec::new();
 // NOW HERE IS A PATTERN YOU CAN'T UNDERSTAND, HOW I COULD JUST SINGLETON (KILL A MAN)
 pub fn get_loop_nodes() -> Mutex<&'static mut Vec<(usize, usize)>> {
     unsafe {
-        return Mutex::new(&mut loop_nodes);
+        return Mutex::new(&mut LOOP_NODES);
     }
 }
 
@@ -24,7 +24,7 @@ pub fn run_part1() {
         // }
         parse_input()
     };
-    let start = grid.iter().find(|(pos, item)| **item == 'S');
+    let start = grid.iter().find(|(_, item)| **item == 'S');
     
     if let Some(start_pos) = start {
         println!("Start is at: {},{}", start_pos.0.0, start_pos.0.1);
@@ -177,7 +177,7 @@ pub fn run_part2() {
                 // - doesn't do anything
                 // . shouldn't exist on the path
                 // S, in our input is a J
-                let mut lrl = state.unmatched.pop();
+                let lrl = state.unmatched.pop();
                 match (lrl, grid.get(node)) {
                     (_, Some('|')) => state.state = if state.state == InOutLoopState::IN { InOutLoopState::OUT } else { InOutLoopState::IN },
                     (Some('F'), Some('J'|'S')) => state.state = if state.state == InOutLoopState::IN { InOutLoopState::OUT } else { InOutLoopState::IN },//toggle
