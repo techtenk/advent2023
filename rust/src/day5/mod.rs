@@ -1,7 +1,8 @@
 use std::ops::Range;
 
 use crate::{get_file_path, helpers::get_input_lines};
-use scan_rules::scanner::{Everything, NonSpace, until_pat_str};
+use scan_rules::scanner::{Everything, NonSpace};
+use scan_rules::scanner::re_str;
 
 pub fn run_part1() {
     let (seeds, maps) = parse_maps();
@@ -133,7 +134,7 @@ fn parse_maps() -> (Vec<i64>, Vec<AlmanacMap>) {
             let result = scan! {l;
                 ("seeds:", [let initial_seeds: i64] +) => { seeds = Some(initial_seeds); },
                 ("") => { /* no action for blank lines */},
-                (let this<| until_pat_str("-"), "-to-", let that: NonSpace<String>, let _: Everything) => { 
+                (let this <| re_str("[a-z]*"), "-to-", let that: NonSpace<String>, let _: Everything) => {
                     current_map_type = match format!("{this}{that}").into() {
                         MapType::Unknown => { println!("No map for line: {}", l); None},
                         x => Some(x)
